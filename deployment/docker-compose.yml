@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../ml_core/models:/app/ml_core/models
+    networks:
+      - app-network
+
+  dashboard:
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile.dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - ../analytics:/app/analytics
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

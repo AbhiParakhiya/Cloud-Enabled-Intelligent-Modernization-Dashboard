@@ -1,0 +1,33 @@
+Dataset Shape:
+(2000, 12)
+
+Columns:
+['transaction_id', 'customer_id', 'amount', 'transaction_type', 'transaction_date', 'status', 'segment', 'account_created_date', 'tx_hour', 'tx_day_of_week', 'account_age_days', 'is_high_value']
+
+Missing Values:
+transaction_id          0
+customer_id             0
+amount                  0
+transaction_type        0
+transaction_date        0
+status                  0
+segment                 0
+account_created_date    0
+tx_hour                 0
+tx_day_of_week          0
+account_age_days        0
+is_high_value           0
+dtype: int64
+
+Descriptive Statistics:
+       transaction_id  customer_id  ...  account_age_days  is_high_value
+count     2000.000000  2000.000000  ...       2000.000000    2000.000000
+mean      1000.500000    50.736000  ...        739.016000       0.901000
+std        577.494589    28.431399  ...        519.214637       0.298737
+min          1.000000     1.000000  ...       -346.000000       0.000000
+25%        500.750000    26.000000  ...        311.000000       1.000000
+50%       1000.500000    50.000000  ...        665.000000       1.000000
+75%       1500.250000    76.000000  ...       1233.250000       1.000000
+max       2000.000000   100.000000  ...       1815.000000       1.000000
+
+[8 rows x 7 columns]
