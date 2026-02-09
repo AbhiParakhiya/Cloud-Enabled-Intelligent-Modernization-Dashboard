@@ -8,11 +8,34 @@ import os
 
 # Config
 st.set_page_config(page_title="Modernization Analytics Dashboard", layout="wide")
+import pickle
+
+# Config
+st.set_page_config(page_title="Modernization Analytics Dashboard", layout="wide")
 # Check for environment variable if running in Docker, else default to localhost
 API_URL = os.getenv("API_URL", "http://localhost:8000")
-# Use absolute path relative to this script
+
+# Use relative paths for better portability
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, '../analytics/cleaned_data.csv')
+DATA_PATH = os.path.join(BASE_DIR, '..', 'analytics', 'cleaned_data.csv')
+MODEL_DIR = os.path.join(BASE_DIR, '..', 'ml_core', 'models')
+
+# --- LOCAL MODEL LOADING (for standalone/cloud mode) ---
+@st.cache_resource
+def load_local_models():
+    models = {}
+    try:
+        with open(os.path.join(MODEL_DIR, 'logistic_regression.pkl'), 'rb') as f:
+            models['lr'] = pickle.load(f)
+        with open(os.path.join(MODEL_DIR, 'random_forest.pkl'), 'rb') as f:
+            models['rf'] = pickle.load(f)
+        with open(os.path.join(MODEL_DIR, 'kmeans.pkl'), 'rb') as f:
+            models['kmeans'] = pickle.load(f)
+        return models
+    except Exception as e:
+        return None
+
+local_models = load_local_models()
 
 # Title
 st.title("Cloud-Enabled Intelligent Modernization Dashboard")
@@ -27,14 +50,23 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("Upload Data")
 uploaded_file = st.sidebar.file_uploader("Upload CSV for Analysis", type=["csv"])
 
-# API Status Check
+# System Status Check (IBM Style)
+api_online = False
 try:
-    if requests.get(f"{API_URL}/").status_code == 200:
-        st.sidebar.success("API Status: Online")
-    else:
-        st.sidebar.warning("API Status: Unreachable")
+    # Short timeout to avoid blocking UI
+    if requests.get(f"{API_URL}/", timeout=0.5).status_code == 200:
+        api_online = True
 except:
-    st.sidebar.error("API Status: Offline")
+    api_online = False
+
+if api_online:
+    st.sidebar.success("✅ System Status: Online (API)")
+elif local_models:
+    st.sidebar.success("✅ System Status: Online (Native Engine)")
+    st.sidebar.caption("Working in standalone mode with embedded models.")
+else:
+    st.sidebar.error("❌ System Status: Offline")
+    st.sidebar.warning("Ensure API is running or models are in 'ml_core/models/'")
 
 @st.cache_data
 def load_data(uploaded_file=None):
@@ -125,7 +157,25 @@ elif page == "AI Predictions":
                 else:
                     st.error("API Error. Ensure FastAPI is running.")
             except requests.exceptions.ConnectionError:
-                st.error("Cannot connect to API. Please ensure 'api_layer/main.py' is running.")
+                # Local Fallback
+                if local_models:
+                    st.info("Using local model inference (API offline)")
+                    features = [[hour, dow, age]]
+                    # Risk
+                    risk_prob = local_models['lr'].predict_proba(features)[0][1]
+                    is_risk = local_models['lr'].predict(features)[0]
+                    # Segment (needs amount, hour)
+                    seg_features = [[amount, hour]]
+                    cluster = local_models['kmeans'].predict(seg_features)[0]
+                    
+                    st.success("Prediction Successful (Local)")
+                    st.json({
+                        "Risk Score": float(risk_prob),
+                        "High Value/Risk": bool(is_risk),
+                        "Customer Segment Cluster": int(cluster)
+                    })
+                else:
+                    st.error("Cannot connect to API and local models not found.")
 
 
 
