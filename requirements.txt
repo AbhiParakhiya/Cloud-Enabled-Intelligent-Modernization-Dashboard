@@ -2,7 +2,9 @@ streamlit>=1.32
 pandas
 numpy
 matplotlib
-seaborn
 altair
 pyarrow
+scikit-learn
 requests
+faker
+seaborn
